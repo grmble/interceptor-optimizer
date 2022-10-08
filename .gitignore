@@ -1,0 +1,13 @@
+# calva and other development tools
+/.calva/ 
+/.lsp/ 
+/.clj-kondo/.cache/
+/.nrepl-port
+/.prepl-port
+
+# clojure tool cache
+/.cpcache/
+
+# mercurial
+.hgignore
+.hg/

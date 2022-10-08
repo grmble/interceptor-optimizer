@@ -1,0 +1,13 @@
+{:paths ["scripts"]
+ :deps
+ {#_"babaska builtins - for running clojure and doc comments in calva"
+  #_"for a full list see https://github.com/babashka/babashka/blob/master/deps.edn"
+  org.clojure/tools.cli {:mvn/version "1.0.206"}
+
+  #_"for babaska & clojure - these are in bb.edn and deps.edn"
+  medley/medley {:mvn/version "1.4.0"}}
+
+ :aliases
+ {:outdated {:deps {com.github.liquidz/antq {:mvn/version "RELEASE"}}
+             :main-opts ["-m" "antq.core"]}}}
+
