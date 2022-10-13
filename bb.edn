@@ -1,13 +1,10 @@
 {:deps
- {#_"for babaska & clojure - these are in bb.edn and deps.edn"
-  medley/medley {:mvn/version "1.4.0"}}
-
- :min-bb-version "0.4.0"
- :paths ["scripts"]
- :tasks
- {clean {:doc "Removes the target folder."
-         :requires ([babashka.fs :as fs])
-         :task (do (println "Removing target folder")
-                   (fs/delete-tree "target"))}
-  test {:doc "Calling a script main function"
-        :task some-script/some-fun}}}
+ {:min-bb-version "0.4.0"
+  :paths ["scripts"]
+  :tasks
+  {clean {:doc "Removes the target folder."
+          :requires ([babashka.fs :as fs])
+          :task (do (println "Removing target folder")
+                    (fs/delete-tree "target"))}
+   test {:doc "Calling a script main function"
+         :task some-script/some-fun}}}}

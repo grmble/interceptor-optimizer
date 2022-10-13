@@ -1,5 +1,5 @@
 # calva and other development tools
-/.calva/ 
+/.calva/output-window/
 /.lsp/ 
 /.clj-kondo/.cache/
 /.nrepl-port
