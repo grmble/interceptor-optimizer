@@ -60,9 +60,7 @@
       (let [composed (->> run-seq
                           (map composable-function)
                           (reverse)
-                          (apply comp))
-            composed (fn [x] (log/warn "running " (:name elem))
-                       (composed x))]
+                          (apply comp))]
         [(assoc elem (:composable elem) composed)])
       run-seq)))
 
@@ -81,4 +79,5 @@
        (log-runs)
        (apply concat)
        (sort-by :position)
-       (map #(dissoc % :position :composable))))
+       (map #(dissoc % :position :composable))
+       (vec)))

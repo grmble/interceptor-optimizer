@@ -5,6 +5,7 @@
    [grmble.interceptor-optimizer.into-interceptor :as ii]
    [grmble.interceptor-optimizer.compile-result :as ic]
    [reitit.interceptor.sieppari :as s]
+   [reitit.core :as r]
    [reitit.interceptor :as ri]
    [reitit.http :as rh]
    [reitit.http.interceptors.exception :as re]))
@@ -36,6 +37,14 @@
           {:executor s/executor}))
 
 
+(def xxx (rh/router ["/answer" {:interceptors interceptors
+                                :handler handler}]
+                    {:compile ic/optimized-compile-result}))
+
+(def yyy (rh/ring-handler xxx {:executor s/executor}))
+
+(yyy {:request-method :get :uri "/answer"})
+
 (comment
 
   ;; manual composition
@@ -53,7 +62,7 @@
   ;; manually running the optimization result
   ((:enter (second (optimize (conj interceptors handler))))
    nil)
-  (identity (second (optimize (conj interceptors handler))))
+  ((:error (first (optimize (conj interceptors handler)))) {:error (ex-info "asdf" {})})
 
 
 
