@@ -17,7 +17,7 @@
    (mark-as-composable interceptor :enter :leave))
   ([interceptor & what]
    (reduce (fn [acc n]
-             (if-let [v (acc n)]
+             (if-let [v (n acc)]
                (assoc acc n (with-meta v {:composable true}))
                acc))
            interceptor what)))

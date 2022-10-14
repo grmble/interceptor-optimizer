@@ -54,3 +54,5 @@
       (is (composable? :enter interceptor))
       (is (composable? :leave interceptor)))))
 
+(comment
+  (clojure.test/run-test test-into-interceptor))
