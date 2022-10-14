@@ -11,11 +11,13 @@ reducing the overhead introduced by using interceptors.
 
 Composable interceptors must not
 
-* return effectful value (e.g promises, async channels, ..)
+* return effectful values (e.g promises, async channels, ..)
 * modify the interceptor queue
 
 
 ## How does it work?
+
+*Trigger Warning: m-word ahead*
 
 With some squinting, interceptors can be seen as a monad.
 The effects that are provided are
@@ -29,7 +31,7 @@ But every monad is also a functor.  Again with a little bit
 of squinting, every interceptor that just returns a plain
 request or response map can be seen as a functor.
 
-The nice bit about functors is that they compose.
+The nice bit about functors is that they compose via function composition.
 
 https://cs.stackexchange.com/questions/129822/functor-in-category-theory-the-free-theorem-for-fmap
 
@@ -68,7 +70,7 @@ composed using Kleisli composition, but that is just what
 the interceptors machinery is doing anyway - it does not
 buy us anything.  The point here is that functors can
 be composed using plain function composition, allowing us
-to circumvent the interceptor machinery.
+to circumvent the ju3,6+3.c.3fre3625tinterceptor machinery.
 
 ### Implementation
 

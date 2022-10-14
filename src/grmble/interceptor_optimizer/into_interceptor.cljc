@@ -4,10 +4,30 @@
             [reitit.exception :as exception]
             [reitit.impl :as impl]))
 
+
+(defn mark-as-composable
+  "Mark an interceptor as composable.
+   
+   Default is to mark both :enter and :leave callbacks if present.
+
+   Can also be called with rest args of keywords, don't use anything but
+   `:enter` or `:leave`.
+   "
+  ([interceptor]
+   (mark-as-composable interceptor :enter :leave))
+  ([interceptor & what]
+   (reduce (fn [acc n]
+             (if-let [v (acc n)]
+               (assoc acc n (with-meta v {:composable true}))
+               acc))
+           interceptor what)))
+
 ;;
 ;; this is reitits into interceptor, modified to preserve
 ;; metadata and produce reitit interceptors
 ;;
+;; changes:
+;; * function case: preserve metadata of original function
 
 (defprotocol IntoInterceptor
   (into-interceptor [this data opts]))
@@ -47,12 +67,14 @@
   #?(:clj  clojure.lang.Fn
      :cljs function)
   (into-interceptor [this data opts]
-    (into-interceptor
-     {:name ::handler
-      ::handler this
-      :enter (fn [ctx]
-               (assoc ctx :response (this (:request ctx))))}
-     data opts))
+    (let [m (meta this)]
+      (into-interceptor
+       {:name ::handler
+        ::handler this
+        :enter (with-meta (fn [ctx]
+                            (assoc ctx :response (this (:request ctx))))
+                 m)}
+       data opts)))
 
   #?(:clj  clojure.lang.PersistentArrayMap
      :cljs cljs.core.PersistentArrayMap)
@@ -64,7 +86,7 @@
   (into-interceptor [this data opts]
     (into-interceptor (ri/map->Interceptor this) data opts))
 
-  ri/Interceptor
+  reitit.interceptor.Interceptor
   (into-interceptor [{:keys [compile] :as this} data opts]
     (if-not compile
       this
