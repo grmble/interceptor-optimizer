@@ -1,5 +1,44 @@
 # Interceptor Optimizer
 
+Proof of concept for optimizing reitit interceptors
+by (ab)using function composition.
+
+STATUS: it works, but slower than plain interceptors.
+
+Unmodified reitit - error handler, one interceptor with enter and leave,
+one handler.
+```
+Evaluation count : 36904740 in 60 samples of 615079 calls.
+             Execution time mean : 1,605790 µs
+    Execution time std-deviation : 33,328240 ns
+   Execution time lower quantile : 1,583692 µs ( 2,5%)
+   Execution time upper quantile : 1,668442 µs (97,5%)
+                   Overhead used : 7,060766 ns
+
+Found 2 outliers in 60 samples (3,3333 %)
+	low-severe	 1 (1,6667 %)
+	low-mild	 1 (1,6667 %)
+ Variance from outliers : 9,3955 % Variance is slightly inflated by outliers
+```
+
+POC - error handler, 1 composed enter action (produced by composing enter, handler 
+and leave of the same input interceptors as above)
+```
+Evaluation count : 16792140 in 60 samples of 279869 calls.
+             Execution time mean : 3,574633 µs
+    Execution time std-deviation : 71,308334 ns
+   Execution time lower quantile : 3,531668 µs ( 2,5%)
+   Execution time upper quantile : 3,663895 µs (97,5%)
+                   Overhead used : 7,060766 ns
+
+Found 3 outliers in 60 samples (5,0000 %)
+	low-severe	 2 (3,3333 %)
+	low-mild	 1 (1,6667 %)
+ Variance from outliers : 7,8789 % Variance is slightly inflated by outliers
+```
+
+
+
 Optimizes your interceptor chain by interceptor composition.
 
 ```clojure

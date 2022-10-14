@@ -37,14 +37,6 @@
           {:executor s/executor}))
 
 
-(def xxx (rh/router ["/answer" {:interceptors interceptors
-                                :handler handler}]
-                    {:compile ic/optimized-compile-result}))
-
-(def yyy (rh/ring-handler xxx {:executor s/executor}))
-
-(yyy {:request-method :get :uri "/answer"})
-
 (comment
 
   ;; manual composition
@@ -73,10 +65,9 @@
   (def oapp (rh/ring-handler
              (rh/router ["/answer" {:interceptors interceptors
                                     :handler handler}]
-                        {:compile ic/optimized-compile-result})
+                        {:compile ic/compile-http-result})
              {:executor s/executor}))
 
-  (cc/bench (app {:request-method :get :uri "/answer"}))
 
 
   (find-runs (conj interceptors handler))
@@ -88,5 +79,6 @@
   (optimize (conj interceptors handler))
 
 
+  (cc/bench (app {:request-method :get :uri "/answer"}))
 
-  (identity (oapp {:request-method :get :uri "/answer"})))
+  (cc/bench (oapp {:request-method :get :uri "/answer"})))

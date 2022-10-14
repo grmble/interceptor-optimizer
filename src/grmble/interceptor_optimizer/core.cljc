@@ -76,7 +76,7 @@
   (->> interceptors
        (find-runs)
        (map compose-run)
-       (log-runs)
+       ; (log-runs)
        (apply concat)
        (sort-by :position)
        (map #(dissoc % :position :composable))

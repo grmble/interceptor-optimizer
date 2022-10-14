@@ -2,7 +2,9 @@
   (:require
    [clojure.tools.logging :as log]
    [grmble.interceptor-optimizer.core :as ic]
-   [reitit.interceptor :refer [chain map->Endpoint]]))
+   [meta-merge.core :refer [meta-merge]]
+   [reitit.interceptor :refer [chain map->Endpoint]]
+   [reitit.ring :as ring]))
 
 ;;
 ;; this is reitit.interceptor/compile-result
@@ -13,8 +15,6 @@
   ([[_ {:keys [interceptors handler] :as data}] {::keys [queue] :as opts} _]
    (let [optimized (ic/optimize (conj (vec interceptors) handler))
          chain (chain optimized data opts)]
-     (log/warn "chain" chain)
-     (log/warn "chain result " ((:enter (second chain)) {:request-method :get :uri "/answer"}))
      (map->Endpoint
       {:interceptors chain
        :queue ((or queue identity) chain)
@@ -23,13 +23,13 @@
 ;;
 ;; this is reitit.http/compile-result
 ;;
-(defn compile-result [[path data] {:keys [::default-options-endpoint expand] :as opts}]
+(defn compile-http-result [[path data] {:keys [::default-options-endpoint expand] :as opts}]
   (let [[top childs] (ring/group-keys data)
         childs (cond-> childs
                  (and (not (:options childs)) (not (:handler top)) default-options-endpoint)
                  (assoc :options (expand default-options-endpoint opts)))
         compile (fn [[path data] opts scope]
-                  (interceptor/compile-result [path data] opts scope))
+                  (compile-interceptor-result [path data] opts scope))
         ->endpoint (fn [p d m s]
                      (let [compiled (compile [p d] opts s)]
                        (-> compiled
