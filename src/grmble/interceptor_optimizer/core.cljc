@@ -112,5 +112,4 @@
              (vec))]
     (assoc opts
            :interceptors (pop optimized)
-           :handler (-> (peek optimized)
-                        (dissoc :reitit.interceptor/handler)))))
+           :handler (peek optimized))))

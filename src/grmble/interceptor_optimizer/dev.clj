@@ -4,6 +4,7 @@
    [grmble.interceptor-optimizer.core :refer [optimize find-runs compose-run]]
    [grmble.interceptor-optimizer.into-interceptor :as ii]
    [clojure.tools.logging :as log]
+   [promesa.core :as p]
    [reitit.interceptor.sieppari :as s]
    [reitit.core :as r]
    [reitit.interceptor :as ri]
@@ -109,3 +110,52 @@
   (cc/bench (manual req))
   ;; mean: 1.05279 ns
   )
+
+
+;; test interceptors: async example
+(def async-interceptors
+  [(re/exception-interceptor)
+   (ii/into-interceptor {:name ::counter1
+                         :enter ^:composable (fn [ctx]
+                                               ; (log/warn "enter")
+                                               (update-in ctx [:request :counter]
+                                                          #(inc (or % 0))))
+                         :leave ^:composable (fn [ctx]
+                                               (let [ctx (update-in ctx [:request :counter]
+                                                                    dec)]
+                                                 (log/warn "leave" (:counter (:request ctx)) (:response ctx)))
+                                               ctx)}
+                        nil nil)
+   (ii/into-interceptor {:name ::counter2
+                         :enter ^:composable (fn [ctx]
+                                               ; (log/warn "enter")
+                                               (update-in ctx [:request :counter]
+                                                          #(inc (or % 0))))
+                         :leave ^:composable (fn [ctx]
+                                               ; (log/warn "leave")
+                                               (update-in ctx [:request :counter]
+                                                          dec))}
+                        nil nil)])
+
+(def async-handler (ii/into-interceptor
+                    (fn [ctx]
+                      (p/delay 500 (str "The counter is "
+                                        (get-in ctx [:counter])
+                                        ", but the answer is "
+                                        42))) nil nil))
+
+(def async-app (rh/ring-handler
+                (rh/router ["/answer" {:interceptors async-interceptors
+                                       :handler async-handler}])
+                {:executor s/executor}))
+
+(def oasync-app (rh/ring-handler
+                 (rh/router ["/answer" (optimize {:interceptors async-interceptors
+                                                  :handler async-handler})])
+                 {:executor s/executor}))
+
+(comment
+
+  (async-app req)
+
+  (oasync-app req))
