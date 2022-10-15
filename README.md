@@ -1,45 +1,10 @@
 # Interceptor Optimizer
 
-Proof of concept for optimizing reitit interceptors
-by (ab)using function composition.
+Proof of concept for optimizing reitit interceptors by
+(ab)using function composition.
 
-STATUS: it works, but slower than plain interceptors.
-
-Unmodified reitit - error handler, one interceptor with enter and leave,
-one handler.
-```
-Evaluation count : 36904740 in 60 samples of 615079 calls.
-             Execution time mean : 1,605790 µs
-    Execution time std-deviation : 33,328240 ns
-   Execution time lower quantile : 1,583692 µs ( 2,5%)
-   Execution time upper quantile : 1,668442 µs (97,5%)
-                   Overhead used : 7,060766 ns
-
-Found 2 outliers in 60 samples (3,3333 %)
-	low-severe	 1 (1,6667 %)
-	low-mild	 1 (1,6667 %)
- Variance from outliers : 9,3955 % Variance is slightly inflated by outliers
-```
-
-POC - error handler, 1 composed enter action (produced by composing enter, handler 
-and leave of the same input interceptors as above)
-```
-Evaluation count : 16792140 in 60 samples of 279869 calls.
-             Execution time mean : 3,574633 µs
-    Execution time std-deviation : 71,308334 ns
-   Execution time lower quantile : 3,531668 µs ( 2,5%)
-   Execution time upper quantile : 3,663895 µs (97,5%)
-                   Overhead used : 7,060766 ns
-
-Found 3 outliers in 60 samples (5,0000 %)
-	low-severe	 2 (3,3333 %)
-	low-mild	 1 (1,6667 %)
- Variance from outliers : 7,8789 % Variance is slightly inflated by outliers
-```
-
-
-
-Optimizes your interceptor chain by interceptor composition.
+Interceptors have to opt-in to this optimization by
+declaring that they are `:composable`:
 
 ```clojure
 {:enter ^:composable (fn [x] (print x) x)}
@@ -48,11 +13,62 @@ Optimizes your interceptor chain by interceptor composition.
 Composable interceptors are composed by the optimizer, thereby
 reducing the overhead introduced by using interceptors.
 
+```clojure
+(http/ring-handler
+           (http/router ["/answer" (optimize {:interceptors interceptors
+                                              :handler handler})])
+           {:executor sieppari/executor})
+```
+
 Composable interceptors must not
 
 * return effectful values (e.g promises, async channels, ..)
 * modify the interceptor queue
 
+
+## Speed comparison
+
+Example interceptors: 1 execption handler, one `:enter` interceptor
+increasing a counter in the context, one `:leave` interceptor decreasing
+the counter.  Plus a handler that produces a string with said counter.
+
+Unoptimized/plain reitit:
+
+```
+Evaluation count : 36067560 in 60 samples of 601126 calls.
+             Execution time mean : 1,675149 µs
+    Execution time std-deviation : 21,175112 ns
+   Execution time lower quantile : 1,659077 µs ( 2,5%)
+   Execution time upper quantile : 1,721012 µs (97,5%)
+                   Overhead used : 7,087744 ns
+
+Found 12 outliers in 60 samples (20,0000 %)
+	low-severe	 6 (10,0000 %)
+	low-mild	 6 (10,0000 %)
+ Variance from outliers : 1,6389 % Variance is slightly inflated by outliers
+```
+
+Same example optimized (the exception handler is untouched, but the
+3 other functions are composed together)
+
+```
+Evaluation count : 41838960 in 60 samples of 697316 calls.
+             Execution time mean : 1,446811 µs
+    Execution time std-deviation : 35,587961 ns
+   Execution time lower quantile : 1,429353 µs ( 2,5%)
+   Execution time upper quantile : 1,481236 µs (97,5%)
+                   Overhead used : 7,087744 ns
+
+Found 10 outliers in 60 samples (16,6667 %)
+	low-severe	 9 (15,0000 %)
+	low-mild	 1 (1,6667 %)
+ Variance from outliers : 12,5682 % Variance is moderately inflated by outliers
+```
+
+A modest improvement, but to me the real benefit is that this also
+helps with async code: every interceptor after the first async one
+will have to be scheduled on a thread pool, if multiple interceptors can
+be composed together this overhead can be significantly reduced.
 
 ## How does it work?
 
@@ -109,7 +125,7 @@ composed using Kleisli composition, but that is just what
 the interceptors machinery is doing anyway - it does not
 buy us anything.  The point here is that functors can
 be composed using plain function composition, allowing us
-to circumvent the ju3,6+3.c.3fre3625tinterceptor machinery.
+to circumvent the interceptor machinery.
 
 ### Implementation
 

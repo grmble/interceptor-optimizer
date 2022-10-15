@@ -70,7 +70,7 @@
     (let [m (meta this)]
       (into-interceptor
        {:name ::handler
-        ::handler this
+        :reitit.interceptor/handler this
         :enter (with-meta (fn [ctx]
                             (assoc ctx :response (this (:request ctx))))
                  m)}

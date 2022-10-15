@@ -1,12 +1,15 @@
 {:paths ["src"]
  :deps
- {criterium/criterium {:mvn/version "0.4.6"}
+ {com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.0.0"}
+  criterium/criterium {:mvn/version "0.4.6"}
   funcool/promesa {:mvn/version "9.0.471"}
   metosin/reitit {:mvn/version "0.5.18"}
   metosin/sieppari {:mvn/version "0.0.0-alpha13"}
   org.clojure/tools.logging {:mvn/version "1.2.4"}}
 
+
  :aliases
- {:outdated {:deps {com.github.liquidz/antq {:mvn/version "RELEASE"}}
+ {:profiler {:jvm-opts ["-Djdk.attach.allowAttachSelf"]}
+  :outdated {:deps {com.github.liquidz/antq {:mvn/version "RELEASE"}}
              :main-opts ["-m" "antq.core"]}}}
 

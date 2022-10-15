@@ -52,16 +52,44 @@
 (defn- composable-function [{:keys [composable] :as specint}]
   (composable specint))
 
+;; functions in comp order
+;; while looking for the big bottleneck i found this small one:
+;; 5% faster because we know that the last function only takes 1 argument
+(defn comp1 [fns]
+  (->> fns
+       (reverse)
+       (reduce (fn [inner outer]
+                 (fn [ctx]
+                   (outer (inner ctx)))))))
+
+(defn first-by
+  "Find the first element in coll where f is trueish, return f applied to that element"
+  [f coll]
+  (some-> (first (filter f coll))
+          (f)))
+
 (defn compose-run
-  "Composes the sequence for a run of consecutive composables or non-composables."
+  "Composes the sequence for a run of consecutive composables or non-composables.
+   
+   Theoretically the handler would not be needed, but without it
+   sieppari execution slows down."
   [run-seq]
   (let [elem (first run-seq)]
     (if (:composable elem)
-      (let [composed (->> run-seq
+      (let [;; TODO what name should be set?
+            ;; currently we keep the name of the first element for
+            ;; ease of debugging the optimizer, but this might be
+            ;; confusing in actual use
+            composed (->> run-seq
                           (map composable-function)
                           (reverse)
-                          (apply comp))]
-        [(assoc elem (:composable elem) composed)])
+                          ;; (apply comp)
+                          (comp1))
+            elem (assoc elem (:composable elem) composed)]
+        ;; must not preserve the handler information
+        ;; otherwise the handler will be recompiled
+        ;; loosing the interceptors that were composed around it
+        [(dissoc elem :reitit.interceptor/handler)])
       run-seq)))
 
 (defn- stats-for-run [run]
@@ -69,15 +97,20 @@
    :length (count run)})
 
 (defn- log-runs [run-seq]
-  (log/warn "run lengths" (map stats-for-run run-seq))
+  (log/warn "interceptor optimizer run lengths" (map stats-for-run run-seq))
   run-seq)
 
-(defn optimize [interceptors]
-  (->> interceptors
-       (find-runs)
-       (map compose-run)
-       ; (log-runs)
-       (apply concat)
-       (sort-by :position)
-       (map #(dissoc % :position :composable))
-       (vec)))
+(defn optimize [{:keys [interceptors handler] :as opts}]
+  (let [optimized
+        (->> (conj (vec interceptors) handler)
+             (find-runs)
+             (map compose-run)
+             (log-runs)
+             (apply concat)
+             (sort-by :position)
+             (map #(dissoc % :position :composable))
+             (vec))]
+    (assoc opts
+           :interceptors (pop optimized)
+           :handler (-> (peek optimized)
+                        (dissoc :reitit.interceptor/handler)))))
